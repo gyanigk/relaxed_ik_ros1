@@ -22,19 +22,15 @@ class KeyboardInput:
 
         self.robot = Robot(setting_file_path)
 
-        self.ee_vel_goals_pub = rospy.Publisher('relaxed_ik/ee_vel_goals', EEVelGoals, queue_size=5)
+        self.ee_vel_goals_pub = rospy.Publisher('relaxed_ik/ee_vel_goals', EEVelGoals, queue_size=1)
 
-        self.pos_stride = 0.015
+        self.pos_stride = 0.005
         self.rot_stride = 0.010
 
-        self.seq = 2
+        self.seq = 1
         
         self.linear = [0,0,0]
         self.angular = [0,0,0]
-
-        # Send a temporary command to move left before taking keyboard input
-        self.linear[1] -= self.pos_stride
-        self.send_temp_command()
 
         keyboard_listener = keyboard.Listener(
             on_press = self.on_press,
@@ -43,32 +39,6 @@ class KeyboardInput:
         rospy.Timer(rospy.Duration(0.033), self.timer_callback)
 
         keyboard_listener.start()
-
-    def send_temp_command(self):
-        msg = EEVelGoals()
-
-        for i in range(self.robot.num_chain):
-            twist = Twist()
-            twist.linear.x = self.linear[0]
-            twist.linear.y = self.linear[1]
-            twist.linear.z = self.linear[2]
-
-            twist.angular.x = self.angular[0]
-            twist.angular.y = self.angular[1]
-            twist.angular.z = self.angular[2]
-
-            tolerance = Twist()
-            tolerance.linear.x = 0.0
-            tolerance.linear.y = 0.0
-            tolerance.linear.z = 0.0
-            tolerance.angular.x = 0.0
-            tolerance.angular.y = 0.0
-            tolerance.angular.z = 0.0
-
-            msg.ee_vels.append(twist)
-            msg.tolerances.append(tolerance)
-
-        self.ee_vel_goals_pub.publish(msg)
 
     def on_press(self, key):
         self.linear = [0,0,0]
